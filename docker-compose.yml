@@ -1,0 +1,57 @@
+version: '3'
+services:
+  payroll-mysql:
+    image: mysql:8.0.18
+    ports:
+      - "3306:3306"
+    environment:
+      - MYSQL_ROOT_PASSWORD=root
+    volumes:
+      - d:/payrolldb:/var/lib/smartshop
+      - ./dbscripts:/docker-entrypoint-initdb.d
+
+  eureka-discovery-server:
+    image: eureka-discovery-app
+    build: eureka-discovery-server/.
+    ports:
+      - 1113:1113
+
+  smart_shop_registration:
+    image: smart_shop_registration-app
+    build: smart_shop_registration/.
+    ports:
+      - 1111:1111
+    depends_on:
+      - payroll-mysql
+      - eureka-discovery-server
+    links:
+      - payroll-mysql
+      - eureka-discovery-server
+
+  smart_shop_access:
+    image: smart_shop_access-app
+    build: smart_shop_access/.
+    ports:
+      - 1112:1112
+    depends_on:
+      - payroll-mysql
+      - eureka-discovery-server
+    links:
+      - payroll-mysql
+      - eureka-discovery-server
+
+  zuul-gateway:
+    image: zuul-gateway-app
+    build: zuul-gateway/.
+    ports:
+      - 1114:1114
+    depends_on:
+      - payroll-mysql
+      - eureka-discovery-server
+      - smart_shop_registration
+      - smart_shop_access
+    links:
+      - payroll-mysql
+      - eureka-discovery-server
+      - smart_shop_registration
+      - smart_shop_access
